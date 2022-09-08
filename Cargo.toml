@@ -1,0 +1,19 @@
+[package]
+name = "virtchord"
+version = "0.1.0"
+edition = "2021"
+
+#[[bin]]
+#name = "example"
+#path = "src/example.rs"
+
+#[[bin]]
+#name = "main"
+#path = "src/main.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+signal-hook = "0.3.14"
+evdev = "0.12.0"
+stringsort = "2.0.0"

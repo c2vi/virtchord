@@ -1,0 +1,10 @@
+#!/bin/bash
+
+cargo build
+
+if [ "$?" == "0" ]
+then
+	sudo ./target/debug/virtchord
+fi
+
+

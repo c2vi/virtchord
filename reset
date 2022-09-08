@@ -1,0 +1,6 @@
+#!/bin/bash
+
+setxkbmap de
+xset r rate 140 40
+
+
