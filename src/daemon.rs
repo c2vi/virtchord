@@ -4,11 +4,13 @@ use std::{hash::Hasher, collections::HashMap};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::fs::File;
+use evdev::uinput::{VirtualDeviceBuilder, VirtualDevice};
+use evdev::{Device, AttributeSet, EventType, InputEvent, Key};
 
 use signal_hook::{consts::SIGWINCH, consts::SIGINT, iterator::Signals};
 
 use crate::keyboard;
-use crate::config::{Config, default_config};
+use crate::config::{Config, ConfigItem, default_config};
 
 pub fn main(){
 
@@ -24,15 +26,24 @@ pub fn main(){
 
     let (tx, rx) = mpsc::channel();
 
+    let device_path: ConfigItem = ConfigItem::new("keyboard.device-path", &config);
+
+    let mut device = Device::open(device_path.get()).unwrap();
+    let mut virt_device_hi = create_virt_keyboard(&device);
+    let mut virt_device: Arc<Mutex<VirtualDevice>> = Arc::new(Mutex::new(virt_device_hi));
+
+    let mut virt_device_listen = virt_device.clone();
+    let mut virt_device_input = virt_device.clone();
+
     // start the keyboard event listening thread
     thread::spawn(move || {
-        keyboard::key_listen(key_listen_config, tx);
+        keyboard::key_listen(key_listen_config, tx, virt_device_listen);
     });
 
     // the thread that actually inputs things with the virtual device
 
     thread::spawn(move || {
-        keyboard::key_input(key_input_config, rx);
+        keyboard::key_input(key_input_config, rx, virt_device_input);
     });
 
     //the main thread listens for commands from the pipe that an unpriveleged user can write to
@@ -47,23 +58,22 @@ pub fn main(){
         println!("Read: '{}'", cmd);
     }
 }
-    // use custom signals to tell the daemon to do stuff
-    // - 34: reload config
-    // - 35: open quick GUI
-    // - 36: open proper GUI
 
-    // DOES NOT WORK, bcs signals yould have to be sent as root, which is annoying.
-    //let mut signals = Signals::new(&[34]).unwrap();
+pub fn create_virt_keyboard(device: &Device) -> VirtualDevice {
 
-    //for sig in signals.forever() {
-        //if sig == 34 {
-            //println!("reloading config, does not work yet at all");
-            //let temp = config.clone();
-            //temp.lock().unwrap().config
-                //.entry("chord-max-time")
-                //.and_modify(|val| *val = "20ms");
-        //}
-    //}
+
+    let mut keys = device.supported_keys().expect("Error while getting the supported_keys of the keyboard");
+        //AttributeSet::<Key>::new();
+    //keys.insert(Key::KEY_A);
+
+    let mut device = VirtualDeviceBuilder::new().unwrap()
+        .name("Fake Keyboard")
+        .with_keys(&keys).unwrap()
+        .build()
+        .unwrap();
+
+    return device
+}
 
 
 

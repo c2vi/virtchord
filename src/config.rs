@@ -79,14 +79,30 @@ fn read_chord_map(file_name: &str) -> HashMap<String, String>{
     file.read_to_string(&mut st).expect("Failed to read chord_map config file");
 
     let stvec: Vec<&str> = st.split("\n").collect();
+    let mut keys: Vec<String> = Vec::new();
+    let mut vals: Vec<&str> = Vec::new();
+    //println!("Len: {}", stvec.len());
 
     for line in stvec {
+        //println!("Line: {}", line);
         if line.len() > 2 && &line[..1] != "#" {
             let key: &str = line.split("=").collect::<Vec<&str>>()[0];
             let val: &str = line.split("=").collect::<Vec<&str>>()[1];
-            map.insert(insertsort(key), String::from(val));
+            keys.push(String::from(key));
+            vals.push(val);
         }
     }
+
+    for (mut key,val) in keys.iter().zip(vals.iter()) {
+        //println!("Key: {}", key);
+        let key = &insertsort(key);
+        let count = keys.iter().filter(|&n| *n == insertsort(key)).count();
+        if count > 1 {
+            println!("Duplicate: {} = {}", key, val);
+        } 
+        map.insert(String::from(key), String::from(*val));
+    }
+
     return map;
 }
 
